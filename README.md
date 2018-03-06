@@ -1,3 +1,10 @@
+TL;DR
+=====
+1. Write your PowerShell script
+2. Drop it in C:\ProgramData\Scheduled Scripts\Tasks\Daily
+3. Watch mom, it runs every day!
+
+
 Windows Scheduled Script
 ========================
 Linux users are familiar with cron - a daemon that launches programs and scripts at predefined 
@@ -50,21 +57,27 @@ Using Windows Scheduled Script
 ==============================
 Simply copy your script to one of the appropriate folders in `%programdata%\Scheduled Scripts\Tasks`.
 
-- Daily: Runs all scripts under `%PROGRAMDATA%\Scheduled Scripts\Tasks\Daily\*.ps1` every day from about 3:00PM to 3:30PM. All scripts will execute with the "NT AUTHORITY\NETWORKSERVICE" privileges. No user needs to be logged on. 
+- Daily: Runs all scripts under `%PROGRAMDATA%\Scheduled Scripts\Tasks\Daily\*.ps1` every day from about 3:00PM to 3:30PM. All scripts will execute with the `NT AUTHORITY\NETWORKSERVICE` privileges. No user needs to be logged on. 
 
-- Monthly: Runs all scripts under `%PROGRAMDATA%\Scheduled Scripts\Tasks\Monthly\*.ps1` on the first day of every month from about 5:00PM to 5:30PM. All scripts will execute with the "NT AUTHORITY\NETWORKSERVICE" privileges. No user needs to be logged on.
+- Monthly: Runs all scripts under `%PROGRAMDATA%\Scheduled Scripts\Tasks\Monthly\*.ps1` on the first day of every month from about 5:00PM to 5:30PM. All scripts will execute with the `NT AUTHORITY\NETWORKSERVICE` privileges. No user needs to be logged on.
 
-- Weekly: Runs all scripts under `%PROGRAMDATA%\Scheduled Scripts\Tasks\Weekly\*.ps1` every Monday from about 4:00PM to 4:30PM. All scripts will execute with the "NT AUTHORITY\NETWORKSERVICE" privileges. No user needs to be logged on.
+- Weekly: Runs all scripts under `%PROGRAMDATA%\Scheduled Scripts\Tasks\Weekly\*.ps1` every Monday from about 4:00PM to 4:30PM. All scripts will execute with the `NT AUTHORITY\NETWORKSERVICE` privileges. No user needs to be logged on.
 
 The above will not run if the system is running on battery. Their 'battery exempted' versions are exactly the same, but will run even if the PC is running on batteries.
 
-- Startup: Runs all scripts under `%PROGRAMDATA%\Scheduled Scripts\Tasks\Startup\*.ps1` every time this computer starts up with the current operating system. No user needs to be logged on. This task will run on both battery and AC power.
+- Startup: Runs all scripts under `%PROGRAMDATA%\Scheduled Scripts\Tasks\Startup\*.ps1` every time this computer starts up with the current operating system. All scripts will execute with the `SYSTEM` privileges. No user needs to be logged on. This task will run on both battery and AC power.
 
 All tasks will not execute again until the next scheduled time if it missed its scheduled start for any reason.
 
 
-Sample Scripts
-==============
+Security Matters
+================
+Scripts are protected by the NTFS filesystem itself. The access control for %PROGRAMDATA%\Scheduled Scripts` is designed to require administrative privileges for write operation, thus preventing a malicious program from modifying your script content. PowerShell execution policy is not used, because 
+it is very easy to get around its restriction.
+
+
+Awesome Samples Scripts
+=======================
 Here are the ones that comes with this package:
 
 Tasks/Startup/MountVHD
