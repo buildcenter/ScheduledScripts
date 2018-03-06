@@ -314,6 +314,8 @@ if (-not (Test-Path $cronScriptPath))
     md $cronScriptPath -Force | Out-Null
 }
 
+dir "$PSScriptRoot\src" -File -Recurse | Unblock-File
+
 copy "$PSScriptRoot\src\*" "$cronScriptPath\" -Recurse
 
 @('Daily', 'Weekly', 'Monthly') | ForEach-Object {
