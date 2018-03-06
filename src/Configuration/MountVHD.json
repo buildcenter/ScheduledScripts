@@ -1,0 +1,9 @@
+{
+    "logLevel": "Information",
+    "vhd": {
+        "Profile": {
+            "driveLetter": "E",
+            "ensure": true
+        }
+    }
+}
