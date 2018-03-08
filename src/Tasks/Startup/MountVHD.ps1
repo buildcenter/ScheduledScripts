@@ -69,4 +69,8 @@ $vhdNames | where { ($_ -ne $null) -and ($_ -ne '') } | ForEach-Object {
             WriteWindowsLog MountVHDError -Data $vhdFilePath, ($_ | Out-String)
         }
     }
+    else
+    {
+        WriteWindowsLog MountVHDNotFound -Data $vhdFilePath
+    }
 }
