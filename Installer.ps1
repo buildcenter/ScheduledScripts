@@ -314,8 +314,6 @@ if (-not (Test-Path $cronScriptPath))
     md $cronScriptPath -Force | Out-Null
 }
 
-dir "$PSScriptRoot\src" -File -Recurse | Unblock-File
-
 copy "$PSScriptRoot\src\*" "$cronScriptPath\" -Recurse
 
 @('Daily', 'Weekly', 'Monthly') | ForEach-Object {
@@ -333,3 +331,5 @@ $sddl = 'O:S-1-5-80-956008885-3418522649-1831038044-1853292631-2271478464G:S-1-5
 $acl = Get-Acl -Path $cronScriptPath
 $acl.SetSecurityDescriptorSddlForm($sddl)
 $acl | Set-Acl -Path $cronScriptPath
+
+dir $cronScriptPath -File -Recurse | ForEach-Object { $_ | Unblock-File }
