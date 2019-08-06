@@ -4,7 +4,7 @@
         EntryType = 'Information'
         LogName = 'Scheduled Scripts'
         Source = 'Daily'
-        Message = 'Running for the first time. Creating slideshow directory...'
+        Message = 'Running for the first time. Creating slideshow directory.'
         EventID = 10300
     }
     ClearOccupiedPath = @{
@@ -47,45 +47,29 @@
         Message = 'Response data from the resource server was malformed: (property) {0}, (value) {1}'
         EventID = 10340
     }
-    GetPreferredImage = @{
+    GetImage = @{
         Category = 3000
         EntryType = 'Verbose'
         LogName = 'Scheduled Scripts'
         Source = 'Daily'
-        Message = 'Downloading image with preferred resolution: {0} -> {1}'
+        Message = 'Downloading image {0} -> {1}'
         EventID = 10322
-    }
-    GetFallbackImage = @{
-        Category = 3000
-        EntryType = 'Verbose'
-        LogName = 'Scheduled Scripts'
-        Source = 'Daily'
-        Message = 'Preferred image resolution not available. Downloading image with available resolution: {0} -> {1}'
-        EventID = 10323
     }
     GetImageFailed = @{
         Category = 3000
         EntryType = 'Error'
         LogName = 'Scheduled Scripts'
         Source = 'Daily'
-        Message = 'Failed to download image: {0}'
+        Message = 'Failed to download image {0}: {1}'
         EventID = 10341
     }
-    PreferredImageExist = @{
+    ImageExist = @{
         Category = 3000
         EntryType = 'Information'
         LogName = 'Scheduled Scripts'
         Source = 'Daily'
-        Message = 'Image with the preferred resolution has already been downloaded: {0}'
+        Message = 'Image already downloaded: {0}'
         EventID = 10301
-    }
-    FallbackImageExist = @{
-        Category = 3000
-        EntryType = 'Information'
-        LogName = 'Scheduled Scripts'
-        Source = 'Daily'
-        Message = 'Image has already been downloaded: {0}'
-        EventID = 10302
     }
     GenericError = @{
         Category = 3000

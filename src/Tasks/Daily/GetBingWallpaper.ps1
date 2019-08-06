@@ -10,12 +10,25 @@ if (Test-Path $taskConfigPath -PathType Leaf)
 }
 
 # --- Config ---
+
 # Error, Information, Verbose
-$logLevel = $(if ($taskConfig.logLevel) { $taskConfig.logLevel } else { 'Information' })
-$apiServerUrl = $(if ($taskConfig.apiServerUrl) { $taskConfig.apiServerUrl } else { 'http://www.bing.com' }) 
-$slideshowPath = $(if ($taskConfig.slideshowPath) { $taskConfig.slideshowPath } else { (Join-Path $env:PUBLIC -ChildPath 'Pictures\Slideshow') })
-$preferredResolution = $(if ($taskConfig.preferredResolution) { $taskConfig.preferredResolution } else { '1920x1200' })
-$firstRunDownloadCount = $(if ($taskConfig.firstRunDownloadCount) { $taskConfig.firstRunDownloadCount } else { '8' })
+$logLevel = $(
+    if ($taskConfig.logLevel) { $taskConfig.logLevel } 
+    else { 'Information' }
+)
+$apiServerUrl = $(
+    if ($taskConfig.apiServerUrl) { $taskConfig.apiServerUrl } 
+    else { 'http://www.bing.com' }
+)
+$slideshowPath = $(
+    if ($taskConfig.slideshowPath) { $taskConfig.slideshowPath } 
+    else { (Join-Path $env:PUBLIC -ChildPath 'Pictures\Slideshow') }
+)
+$firstRunDownloadCount = $(
+    if ($taskConfig.firstRunDownloadCount) { $taskConfig.firstRunDownloadCount } 
+    else { '8' }
+)
+
 # --- /Config ---
 
 . (Join-Path $basePath -ChildPath 'Logging.ps1')
@@ -36,69 +49,74 @@ try
         md $slideshowPath -Force | Out-Null
     }
 
+    $bingImageListApi = '/HPImageArchive.aspx?format=js&idx=0&n={0}'
+
     $slideshowFiles = dir $slideshowPath -File
     if (-not $slideshowFiles)
     {
         WriteWindowsLog Get8Image
-        $apiResponseContent = Invoke-WebRequest -UseBasicParsing -Uri ('{0}/HPImageArchive.aspx?format=js&idx=0&n={1}' -f $apiServerUrl, $firstRunDownloadCount)
+        $apiResponseContent = Invoke-WebRequest -UseBasicParsing -Uri ($apiServerUrl + ($bingImageListApi -f $firstRunDownloadCount))
     }
     else
     {
         WriteWindowsLog Get1Image
-        $apiResponseContent = Invoke-WebRequest -UseBasicParsing -Uri ('{0}/HPImageArchive.aspx?format=js&idx=0&n=1' -f $apiServerUrl)
+        $apiResponseContent = Invoke-WebRequest -UseBasicParsing -Uri ($apiServerUrl + ($bingImageListApi -f '1'))
     }
 
     WriteWindowsLog ParseJsonContent
     $apiResponse = ConvertFrom-Json $apiResponseContent.Content
 
+    $imageContentExtension = @{
+        'image/jpeg' = '.jpg'
+        'image/jpg' = '.jpg'
+        'image/png' = '.png'
+    }
+
     $apiResponse.images | where { $_ -is [psobject] } | ForEach-Object {
-        if (($_.url -isnot [string]) -or (-not $_.url.Contains('.')))
+        if (($_.url -isnot [string]) -or ($_.url -notlike '/*'))
         {
-            WriteWindowsLog MetadataMalform -Data 'url', $_.url
+            WriteWindowsLog MetadataMalform -Data 'url', ($_.url | Out-String)
         }
-        elseif (($_.urlbase -isnot [string]) -or (-not $_.urlbase.Contains('/')))
+        elseif (($_.urlbase -isnot [string]) -or ($_.urlbase -notlike '/*'))
         {
-            WriteWindowsLog MetadataMalform -Data 'urlbase', $_.urlbase
+            WriteWindowsLog MetadataMalform -Data 'urlbase', ($_.urlbase | Out-String)
         }
         else
         {
-            $fileExtension = $_.url.Substring($_.url.LastIndexOf('.'))
-            $fileBaseName = $_.urlbase.Substring($_.urlbase.LastIndexOf('/') + 1)
-            $filename = $_.url.Substring($_.url.LastIndexOf('/') + 1)
+            $fileBaseName = $_.hsh
+            $imageUrl = $apiServerUrl + $_.url
 
-            $imgUrl = $apiServerUrl + $_.urlbase + '_' + $preferredResolution + $fileExtension
-            $imgOutFile = Join-Path $slideshowPath -ChildPath ('{0}_{1}{2}' -f $fileBaseName, $preferredResolution, $fileExtension)
-    
-            $fallbackImageUrl = $apiServerUrl + $_.url
-            $fallbackImgOutFile = Join-Path $slideshowPath -ChildPath ('{0}' -f $filename)
+            try
+            {
+                WriteWindowsLog GetImage -Data $imageUrl, $fileBaseName
+                $imageResponse = Invoke-WebRequest -Uri $imageUrl -UseBasicParsing -TimeoutSec 10
 
-            if (Test-Path $imgOutFile -PathType Leaf)
-            {
-                WriteWindowsLog PreferredImageExist -Data $imgOutFile
-            }
-            elseif (Test-Path $fallbackImgOutFile -PathType Leaf)
-            {
-                WriteWindowsLog FallbackImageExist -Data $fallbackImgOutFile
-            }
-            else
-            {
-                try
+                if ($imageResponse.StatusCode -ne 200)
                 {
-                    WriteWindowsLog GetPreferredImage -Data $imgUrl, $imgOutFile
-                    Invoke-WebRequest -Uri $imgUrl -OutFile $imgOutFile -UseBasicParsing -TimeoutSec 10
+                    throw ('bad_response {0}' -f $imageResponse.StatusCode)
                 }
-                catch
+
+                $fileExtension = $imageContentExtension."$($imageResponse.Headers.'Content-Type')"
+                if (-not $fileExtension)
                 {
-                    try
-                    {
-                        WriteWindowsLog GetFallbackImage -Data $fallbackImageUrl, $fallbackImgOutFile
-                        Invoke-WebRequest -UseBasicParsing -Uri $fallbackImageUrl -OutFile $fallbackImgOutFile -TimeoutSec 10
-                    }
-                    catch
-                    {
-                        WriteWindowsLog GetImageFailed -Data $fallbackImageUrl
-                    }
+                    throw ('supported_image_extension {0}' -f $imageResponse.Headers.'Content-Type')
                 }
+
+                $imageFileName = '{0}{1}' -f $fileBaseName, $fileExtension
+                $imageSavePath = Join-Path $slideshowPath -ChildPath $imageFileName
+
+                if (Test-Path $imageSavePath -PathType Leaf)
+                {
+                    WriteWindowsLog ImageExist -Data $imageSavePath
+                }
+                else
+                {
+                    Set-Content -Path $imageSavePath -Value $imageResponse.Content -Encoding Byte
+                }
+            }
+            catch
+            {
+                WriteWindowsLog GetImageFailed -Data $imageUrl, ($_ | Out-String)
             }
         }
     }
