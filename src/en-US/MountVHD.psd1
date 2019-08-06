@@ -47,12 +47,4 @@
         Message = 'Unable to mount VHD "{0}": {1}'
         EventID = 10066
     }
-    MountVHDNotFound = @{
-        Category = 3000
-        EntryType = 'Error'
-        LogName = 'Host Access'
-        Source = 'Startup'
-        Message = 'Unable to mount VHD "{0}" because the file does not exist.'
-        EventID = 10067
-    }
 }
